@@ -13,3 +13,4 @@ lxml
 urllib3
 python-whois
 FlightRadarAPI
+youtube-transcript-api
