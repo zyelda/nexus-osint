@@ -11,3 +11,4 @@ groq
 beautifulsoup4
 lxml
 urllib3
+python-whois
