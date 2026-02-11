@@ -1,0 +1,13 @@
+Flask
+Werkzeug
+requests
+dnspython
+phonenumbers
+Pillow
+PyPDF2
+python-docx
+duckduckgo-search
+groq
+beautifulsoup4
+lxml
+urllib3

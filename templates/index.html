@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OSINT | by Zoelmatoriq</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22 fill=%22%2366fcf1%22><path d=%22M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z%22/><path d=%22M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8zm8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z%22/></svg>">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-color: #0b0c10;
+            --card-bg: #1f2833;
+            --text-color: #c5c6c7;
+            --accent-cyan: #66fcf1;
+            --accent-dark: #45a29e;
+            --danger-red: #ff3860;
+        }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Rajdhani', sans-serif;
+            min-height: 100vh;
+        }
+        body::before {
+            content: " ";
+            display: block; position: fixed; top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 2; background-size: 100% 2px, 3px 100%; pointer-events: none;
+        }
+
+        .navbar-brand {
+            font-family: 'JetBrains Mono', monospace; font-weight: bold;
+            color: var(--accent-cyan) !important; letter-spacing: 2px;
+        }
+
+        .search-container { margin-top: 50px; margin-bottom: 30px; }
+        
+        .form-control {
+            background: rgba(31, 40, 51, 0.8); border: 1px solid var(--accent-dark);
+            color: var(--accent-cyan); font-family: 'JetBrains Mono', monospace;
+        }
+        .form-control:focus {
+            background: #1f2833; color: #fff; box-shadow: 0 0 15px var(--accent-dark);
+            border-color: var(--accent-cyan);
+        }
+
+        .btn-scan {
+            background: var(--accent-dark); color: #fff; border: none; font-weight: bold; transition: all 0.3s;
+        }
+        .btn-scan:hover {
+            background: var(--accent-cyan); color: #000; box-shadow: 0 0 20px var(--accent-cyan);
+        }
+
+        .card-custom {
+            background: rgba(31, 40, 51, 0.6); border: 1px solid #30363d;
+            backdrop-filter: blur(5px); margin-bottom: 20px;
+        }
+        .card-header {
+            background: rgba(69, 162, 158, 0.2); border-bottom: 1px solid var(--accent-dark);
+            color: var(--accent-cyan); font-family: 'JetBrains Mono', monospace; font-weight: bold;
+        }
+
+        .ai-box {
+            border-left: 3px solid var(--accent-cyan); padding: 15px;
+            background: rgba(102, 252, 241, 0.05); font-family: 'JetBrains Mono', monospace;
+            font-size: 0.95rem; color: #e0e0e0; white-space: pre-wrap;
+        }
+
+        .table-dark { background-color: transparent; color: var(--text-color); }
+        .key-column { width: 30%; color: var(--accent-dark); font-weight: bold; vertical-align: middle; }
+        td { vertical-align: middle; word-break: break-all; }
+
+        .dork-btn {
+            background: transparent; border: 1px solid var(--danger-red);
+            color: var(--danger-red); margin: 5px; font-size: 0.85rem;
+        }
+        .dork-btn:hover { background: var(--danger-red); color: white; }
+
+        .btn-link-custom {
+            text-decoration: none; color: white; background: var(--accent-dark);
+            padding: 5px 10px; border-radius: 4px; font-size: 0.8rem; display: inline-block;
+        }
+        .btn-link-custom:hover { background: var(--accent-cyan); color: black; }
+
+        #mapContainer {
+            height: 300px; width: 100%; border-radius: 5px; margin-bottom: 15px;
+            border: 1px solid var(--accent-dark); display: none; z-index: 1;
+        }
+        
+        .pddikti-header {
+            background-color: var(--accent-dark); color: black; font-weight: bold; text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar navbar-dark bg-transparent border-bottom border-secondary">
+        <div class="container">
+            <a class="navbar-brand" href="#"><i class="bi bi-eye-fill"></i> OSINT</a>
+        </div>
+    </nav>
+
+    <div class="container search-container">
+        <div class="text-center mb-5">
+            <h1 class="display-5 fw-bold text-white">OSINT <span style="color: var(--accent-cyan);">DASHBOARD</span></h1>
+            <p style="color: var(--text-color);">
+                Target: IP / Domain / Email / Username / NIK / Nama Mahasiswa
+            </p>
+        </div>
+
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="input-group input-group-lg mb-3">
+                    <input type="file" id="fileInput" style="display: none;" accept="image/*, .pdf, .docx">
+                    <button class="btn btn-outline-secondary text-white" type="button" onclick="document.getElementById('fileInput').click()">
+                        <i class="bi bi-camera"></i>
+                    </button>
+                    <input type="text" id="targetInput" class="form-control" placeholder="Masukkan Target...">
+                    <button class="btn btn-scan" onclick="startScan()">SCAN</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="loading" class="text-center mt-5" style="display: none;">
+            <div class="spinner-border text-info" role="status" style="width: 3rem; height: 3rem;"></div>
+            <p class="mt-3 text-info blink">ACCESSING DATABASE...</p>
+        </div>
+
+        <div id="resultArea" class="row mt-4" style="display: none;">
+            
+            <div class="col-12 mb-4">
+                <div class="card card-custom">
+                    <div class="card-header"><i class="bi bi-robot"></i> AI SUMMARY</div>
+                    <div class="card-body">
+                        <div id="aiOutput" class="ai-box"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-8">
+                <div class="card card-custom h-100">
+                    <div class="card-header">
+                        <i class="bi bi-terminal"></i> TARGET DATA: <span id="targetTypeTitle" class="text-white"></span>
+                    </div>
+                    <div class="card-body">
+                        
+                        <div id="mapContainer"></div> 
+
+                        <div class="table-responsive">
+                            <table class="table table-dark table-hover" id="dataTable">
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card card-custom h-100">
+                    <div class="card-header"><i class="bi bi-tools"></i> GOOGLE DORKS / LINKS</div>
+                    <div class="card-body" id="dorksArea">
+                        <p class="text-muted small">Klik tombol di bawah untuk pencarian spesifik:</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        async function startScan() {
+            const target = document.getElementById('targetInput').value;
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+
+            if(!target && !file) { alert("Masukkan Target Dulu!"); return; }
+
+            document.getElementById('resultArea').style.display = 'none';
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('dataTable').innerHTML = "";
+            document.getElementById('dorksArea').innerHTML = "";
+
+            const formData = new FormData();
+            if (file) formData.append('file', file);
+            else formData.append('target', target);
+
+            try {
+                const response = await fetch('/scan', { method: 'POST', body: formData });
+                const data = await response.json();
+
+                // 1. TAMPILKAN AI
+                document.getElementById('aiOutput').innerText = data.ai_analysis || "Tidak ada analisa AI.";
+                document.getElementById('targetTypeTitle').innerText = data.type;
+
+                // 2. RENDER PETA
+                const mapContainer = document.getElementById('mapContainer');
+                if (window.myMap) { window.myMap.remove(); window.myMap = null; }
+                mapContainer.style.display = 'none';
+
+                let gpsData = data.data["GPS Coordinates"];
+                let lat = null, lon = null;
+
+                if (gpsData) {
+                    if (typeof gpsData === 'object' && gpsData.Latitude && gpsData.Longitude) {
+                        lat = gpsData.Latitude;
+                        lon = gpsData.Longitude;
+                    } 
+                    else if (typeof gpsData === 'string' && gpsData.includes(',')) {
+                        let parts = gpsData.split(',');
+                        lat = parseFloat(parts[0]);
+                        lon = parseFloat(parts[1]);
+                    }
+                }
+
+                if (lat !== null && lon !== null) {
+                    mapContainer.style.display = 'block';
+                    window.myMap = L.map('mapContainer').setView([lat, lon], 13);
+                    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                        attribution: '&copy; OpenStreetMap', subdomains: 'abcd', maxZoom: 19
+                    }).addTo(window.myMap);
+                    L.marker([lat, lon]).addTo(window.myMap)
+                        .bindPopup(`<b>LOKASI TARGET</b><br>Lat: ${lat}<br>Lon: ${lon}`)
+                        .openPopup();
+                    setTimeout(() => { window.myMap.invalidateSize(); }, 500);
+                }
+
+                // 3. RENDER TABEL (Logic Baru untuk PDDikti)
+                const tableBody = document.getElementById('dataTable');
+                let rawData = data.data;
+
+                function renderData(obj, prefix="") {
+                    for (const key in obj) {
+                        
+                        // LOGIC KHUSUS PDDikti (Agar data mahasiswa muncul rapi)
+                        if (key === "Data Mahasiswa" && Array.isArray(obj[key])) {
+                            obj[key].forEach((mhs, index) => {
+                                tableBody.innerHTML += `
+                                    <tr><td colspan="2" class="pddikti-header">DATA MAHASISWA #${index + 1}</td></tr>
+                                `;
+                                for (let k in mhs) {
+                                    let val = mhs[k];
+                                    if(val.startsWith("http")) val = `<a href="${val}" target="_blank" class="btn-link-custom">LIHAT DATA</a>`;
+                                    tableBody.innerHTML += `<tr><td class="key-column ps-4">${k}</td><td>${val}</td></tr>`;
+                                }
+                            });
+                            continue; // Skip rendering standar untuk key ini
+                        }
+
+                        // LOGIC STANDAR
+                        if (typeof obj[key] === 'object' && obj[key] !== null) {
+                            if (Array.isArray(obj[key])) {
+                                // Cek apakah array string sederhana atau array object
+                                if (obj[key].length > 0 && typeof obj[key][0] === 'object') {
+                                    renderData(obj[key], prefix + key + " > "); // Rekursif jika array object
+                                } else {
+                                    let listHtml = obj[key].map(item => `<span class="badge bg-secondary me-1">${item}</span>`).join(" ");
+                                    tableBody.innerHTML += `<tr><td class="key-column">${prefix + key}</td><td>${listHtml}</td></tr>`;
+                                }
+                            } else {
+                                renderData(obj[key], prefix + key + " > ");
+                            }
+                        } else {
+                            let value = obj[key];
+                            if (typeof value === 'string' && (value.endsWith('.jpg') || value.endsWith('.png'))) {
+                                value = `<img src="${value}" class="img-fluid rounded border border-secondary" style="max-width: 200px;">`;
+                            }
+                            else if (typeof value === 'string' && value.startsWith('http')) {
+                                value = `<a href="${value}" target="_blank" class="btn-link-custom"><i class="bi bi-box-arrow-up-right"></i> BUKA LINK</a> <span class="text-muted small ms-2">${value.substring(0,30)}...</span>`;
+                            }
+                            tableBody.innerHTML += `<tr><td class="key-column">${prefix + key}</td><td>${value}</td></tr>`;
+                        }
+                    }
+                }
+                
+                // Handling Khusus Profil Sosmed
+                if (data.type === "USERNAME" && rawData["Found Accounts"]) {
+                    rawData["Found Accounts"].forEach(acc => {
+                        tableBody.innerHTML += `<tr><td class="key-column">${acc.site}</td><td><a href="${acc.url}" target="_blank" class="btn-link-custom">LIHAT PROFIL</a></td></tr>`;
+                    });
+                } else if (data.type === "PERSON" && rawData["Jejak Digital"]) {
+                    rawData["Jejak Digital"].forEach(jejak => {
+                         tableBody.innerHTML += `<tr><td class="key-column text-warning">${jejak.Kategori}</td><td><a href="${jejak.Link}" target="_blank" class="text-info text-decoration-none fw-bold">${jejak.Judul}</a><br><small class="text-muted">${jejak.Deskripsi}</small></td></tr>`;
+                    });
+                    // Tetap render sisa data (termasuk PDDikti jika ada di dalam Person)
+                    if(rawData["DATA KAMPUS (PDDikti)"]) {
+                        renderData({"(PDDikti)": rawData["DATA KAMPUS (PDDikti)"]});
+                    }
+                } else {
+                    renderData(rawData);
+                }
+
+                // 4. DORKS
+                const dorksArea = document.getElementById('dorksArea');
+                if (data.google_dorks) {
+                    for (const [label, link] of Object.entries(data.google_dorks)) {
+                        dorksArea.innerHTML += `<a href="${link}" target="_blank" class="btn dork-btn w-100 text-start"><i class="bi bi-search"></i> ${label}</a>`;
+                    }
+                } else {
+                    dorksArea.innerHTML += `<p class="text-muted text-center mt-3">Tidak ada Dorks tersedia.</p>`;
+                }
+
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('resultArea').style.display = 'flex';
+                
+                fileInput.value = "";
+                document.getElementById('targetInput').disabled = false;
+                document.getElementById('targetInput').value = "";
+
+            } catch (error) {
+                console.error(error);
+                alert("Terjadi Kesalahan: " + error);
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        document.getElementById('fileInput').addEventListener('change', function(){
+            if(this.files[0]){
+                document.getElementById('targetInput').value = "[FILE]: " + this.files[0].name;
+                document.getElementById('targetInput').disabled = true;
+            }
+        });
+    </script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</body>
+</html>
