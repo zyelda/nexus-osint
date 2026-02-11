@@ -12,3 +12,4 @@ beautifulsoup4
 lxml
 urllib3
 python-whois
+FlightRadarAPI
