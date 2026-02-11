@@ -6,9 +6,8 @@ GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 if not GROQ_API_KEY:
     print("Warning: GROQ_API_KEY not set")
     client = None
-
 else:
-    client = Groq(GROQ_API_KEY=GROQ_API_KEY)
+    client = Groq(api_key=GROQ_API_KEY)
 
 def analyze_data_with_ai(target, target_type, json_data):
     if not GROQ_API_KEY:
