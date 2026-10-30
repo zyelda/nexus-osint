@@ -59,7 +59,9 @@ def create_app(settings: Settings | None = None) -> Flask:
         origin = request.headers.get("Origin")
         if origin and origin in allowed_origins:
             response.headers["Access-Control-Allow-Origin"] = origin
-            response.headers["Access-Control-Allow-Headers"] = "Content-Type, X-Berkas-Token, X-Nexus-Token"
+            response.headers["Access-Control-Allow-Headers"] = (
+                "Content-Type, X-Berkas-Token, X-Nexus-Token, ngrok-skip-browser-warning"
+            )
             response.headers["Access-Control-Allow-Methods"] = "GET, POST, DELETE, OPTIONS"
             response.headers["Access-Control-Expose-Headers"] = "Content-Disposition"
             response.headers["Access-Control-Max-Age"] = "600"

@@ -202,3 +202,4 @@ def test_cors_origin_is_allowed(tmp_path):
     assert preflight.status_code == 200
     assert preflight.headers["Access-Control-Allow-Origin"] == "https://berkas.vercel.app"
     assert "X-Berkas-Token" in preflight.headers["Access-Control-Allow-Headers"]
+    assert "ngrok-skip-browser-warning" in preflight.headers["Access-Control-Allow-Headers"]
