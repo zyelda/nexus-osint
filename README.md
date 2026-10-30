@@ -197,7 +197,7 @@ Salin `.env.example` menjadi `.env`. Jangan commit file `.env`.
 | `ABUSEIPDB_API_KEY` | kosong | AbuseIPDB untuk `ip_reputation`. |
 | `HIBP_API_KEY` | kosong | Have I Been Pwned untuk `email_breach`. |
 
-Frontend memakai `VITE_API_BASE` saat build. Kosongkan bila frontend dan backend satu origin. Untuk Vercel, isi dengan origin backend, misalnya `https://api.contoh.com`.
+Frontend memakai `VITE_API_BASE` saat build. Kosongkan bila frontend dan backend satu origin. Untuk Vercel, isi dengan origin backend, misalnya `https://api.contoh.com`. Alamat itu juga bisa diubah kapan saja dari ikon plug di header tanpa deploy ulang; nilai dari build hanya menjadi default.
 
 ## Cara pakai
 
@@ -384,12 +384,15 @@ Langkah:
    - `BERKAS_API_TOKEN` bila API perlu dilindungi
    - `BERKAS_CORS_ORIGINS=https://nama-proyek.vercel.app`
    - `DATABASE_URL` dan `UPLOAD_FOLDER` ke volume persisten
-3. Set environment Vercel:
-   - `VITE_API_BASE=https://api.contoh.com`
-4. Deploy ulang frontend. Vercel membaca `VITE_API_BASE` saat build.
-5. Buka halaman, cek status backend, lalu jalankan satu kasus percobaan.
+3. Hubungkan frontend ke backend, pilih salah satu:
+   - **Lewat aplikasi, tanpa deploy ulang.** Buka situs, klik ikon plug di header atau tombol *Hubungkan backend* pada banner, lalu masukkan origin backend, misalnya `https://api.contoh.com`. Alamat disimpan di `localStorage` browser itu saja, jadi ulangi di browser atau perangkat lain.
+   - **Lewat build.** Set `VITE_API_BASE=https://api.contoh.com` di environment Vercel, lalu deploy ulang. Nilai ini dibaca saat build dan menjadi default untuk semua pengunjung.
+4. Isi token lewat tombol kunci di header bila backend memakai `BERKAS_API_TOKEN`.
+5. Buka satu kasus percobaan dan jalankan satu tool untuk memastikan CORS, token, dan SSE bekerja.
 
-Tanpa `VITE_API_BASE`, halaman dan dokumentasi tetap terbuka, tetapi intake menampilkan pesan bahwa backend belum terhubung.
+Tanpa alamat backend, halaman dan dokumentasi tetap terbuka, tetapi intake menampilkan pesan bahwa backend belum terhubung. Tombol plug di header selalu tersedia untuk mengubah alamat kapan saja.
+
+Alamat yang dimasukkan harus origin saja, tanpa `/api/v1` dan tanpa garis miring di akhir. Skema `https://` ditambahkan otomatis bila tidak ditulis.
 
 Catatan:
 
@@ -397,6 +400,7 @@ Catatan:
 - SSE lewat reverse proxy perlu buffering dimatikan. Untuk Nginx, set `proxy_buffering off` pada lokasi `/api/`.
 - Jangan menaruh database SQLite di filesystem serverless. Data akan hilang antar request.
 - `vercel.json` memakai `builds` eksplisit supaya Vercel tidak mendeteksi `app.py` sebagai fungsi Python. File `.vercelignore` juga mengeluarkan backend dari unggahan Vercel.
+- Host statis lain seperti Netlify atau Cloudflare Pages dikenali lewat domain `netlify.app` dan `pages.dev`. Untuk domain kustom, set `VITE_STATIC_HOST=1` saat build agar aplikasi tahu bahwa backend harus diisi terpisah.
 - Bila proyek Vercel sebelumnya pernah menjalankan versi Python, set Framework Preset ke `Other`, kosongkan Root Directory, dan kosongkan Build Command, Output Directory, serta Install Command di dashboard. Pengaturan dashboard menimpa `vercel.json`.
 
 Gejala konfigurasi yang belum benar: semua path, termasuk `/index.html` dan `/assets/...`, mengembalikan HTTP 500 dengan `FUNCTION_INVOCATION_FAILED`. Itu berarti Vercel masih menjalankan fungsi Python, bukan menyajikan hasil build frontend.
@@ -448,7 +452,13 @@ Isi key yang disebut pada tool tersebut di `.env`, lalu restart backend. Status 
 Reverse proxy mungkin membuffer response. Matikan buffering untuk `/api/`, atau jalankan backend langsung tanpa proxy saat pengujian.
 
 **Intake di Vercel bilang backend belum terhubung.**
-Set `VITE_API_BASE` di environment Vercel, lalu deploy ulang. Pastikan origin frontend ada di `BERKAS_CORS_ORIGINS` backend.
+Klik ikon plug di header atau tombol *Hubungkan backend* pada banner, lalu masukkan origin backend. Alternatifnya set `VITE_API_BASE` di environment Vercel lalu deploy ulang. Pastikan origin frontend ada di `BERKAS_CORS_ORIGINS` backend.
+
+**Frontend tidak bisa menghubungi backend setelah alamat diisi.**
+Buka DevTools, cek request ke `/api/v1/health`. Bila gagal dengan pesan CORS, origin frontend belum terdaftar di `BERKAS_CORS_ORIGINS`. Bila gagal dengan `ERR_NETWORK`, alamat backend salah atau prosesnya mati. Ikon plug menampilkan alamat yang sedang dipakai.
+
+**Alamat backend hilang setelah ganti browser.**
+Alamat dan token disimpan di `localStorage`, bukan di server. Isi ulang sekali per browser, atau set `VITE_API_BASE` saat build agar alamat menjadi default.
 
 **401 unauthorized.**
 Isi token yang sama dengan `BERKAS_API_TOKEN` lewat tombol kunci di header. Token disimpan di `localStorage` browser.

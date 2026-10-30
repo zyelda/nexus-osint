@@ -65,7 +65,9 @@ def create_app(settings: Settings | None = None) -> Flask:
             response.headers["Access-Control-Max-Age"] = "600"
             response.headers.add("Vary", "Origin")
         if response.mimetype == "text/html":
-            connect_sources = " ".join(["'self'", *settings.cors_origins])
+            # The backend address can be set at runtime in the browser, so a
+            # fixed allowlist would block every origin except the built one.
+            connect_sources = " ".join(["'self'", "https:", "http:", *settings.cors_origins])
             response.headers.setdefault(
                 "Content-Security-Policy",
                 "default-src 'self'; img-src 'self' data: blob: https:; "

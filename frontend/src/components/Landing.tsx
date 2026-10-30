@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
-import { api, backendConfigured } from '../api';
+import { api } from '../api';
 import type { CaseSummary, ParsedEntity, ToolSpec } from '../types';
-import { BookIcon, CloseIcon, FileIcon, PlusIcon, SearchIcon, UploadIcon } from './Icons';
+import { BookIcon, CloseIcon, FileIcon, PlugIcon, PlusIcon, SearchIcon, UploadIcon } from './Icons';
 
 interface LandingProps {
   tools: ToolSpec[];
   cases: CaseSummary[];
   casesLoading: boolean;
+  backendConfigured: boolean;
+  onConfigureBackend: () => void;
   onOpenCase: (caseId: string) => void;
   onCreated: (caseId: string) => void;
   onOpenDocs: () => void;
@@ -28,6 +30,8 @@ export function Landing({
   tools,
   cases,
   casesLoading,
+  backendConfigured,
+  onConfigureBackend,
   onOpenCase,
   onCreated,
   onOpenDocs,
@@ -177,9 +181,12 @@ export function Landing({
     <main className="landing">
       {!backendConfigured && (
         <div className="notice notice-warn backend-notice" role="status">
-          <strong>Backend belum terhubung.</strong> Deployment ini hanya menyajikan antarmuka. Isi
-          <code> VITE_API_BASE </code>
-          di environment Vercel, lalu deploy ulang.
+          <strong>Backend belum terhubung.</strong> Deployment ini hanya menyajikan antarmuka. Masukkan alamat API
+          untuk mulai memakai tool.
+          <button type="button" className="link-btn" onClick={onConfigureBackend}>
+            <PlugIcon size={13} />
+            Hubungkan backend
+          </button>
           <button type="button" className="link-btn" onClick={onOpenDocs}>
             Buka panduan deploy
           </button>

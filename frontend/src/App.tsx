@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ApiError, api, backendConfigured, getToken, setToken } from './api';
+import { ApiError, api, getApiOrigin, getToken, isStaticHost, setApiOrigin, setToken } from './api';
+import { BackendDialog } from './components/BackendDialog';
 import { CaseRail } from './components/CaseRail';
 import { Documentation } from './components/Documentation';
 import { FindingsPanel } from './components/FindingsPanel';
 import { GraphView } from './components/GraphView';
-import { BookIcon, KeyIcon, MoonIcon, RefreshIcon, SunIcon } from './components/Icons';
+import { BookIcon, KeyIcon, MoonIcon, PlugIcon, RefreshIcon, SunIcon } from './components/Icons';
 import { Landing } from './components/Landing';
 import { ToastStack, type ToastItem } from './components/ToastStack';
 import { TokenDialog } from './components/TokenDialog';
@@ -45,11 +46,14 @@ export default function App() {
   const [theme, setTheme] = useState<Theme>(initialTheme);
   const [streamState, setStreamState] = useState<StreamState>('idle');
   const [tokenOpen, setTokenOpen] = useState(false);
+  const [backendOpen, setBackendOpen] = useState(false);
+  const [apiOrigin, setApiOriginState] = useState(() => getApiOrigin());
   const [token, setTokenValue] = useState(() => getToken());
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [focusRequest, setFocusRequest] = useState<{ id: string; token: number } | null>(null);
   const toastCounter = useRef(0);
   const failureCount = useRef(0);
+  const configured = Boolean(apiOrigin) || !isStaticHost;
 
   const addToast = useCallback((message: string, tone: 'info' | 'error' = 'info') => {
     toastCounter.current += 1;
@@ -88,7 +92,7 @@ export default function App() {
   );
 
   const refreshCases = useCallback(async () => {
-    if (!backendConfigured) {
+    if (!configured) {
       setCases([]);
       setCasesLoading(false);
       return;
@@ -103,7 +107,7 @@ export default function App() {
     } finally {
       setCasesLoading(false);
     }
-  }, []);
+  }, [configured]);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -115,7 +119,7 @@ export default function App() {
   }, [theme]);
 
   useEffect(() => {
-    if (!backendConfigured) {
+    if (!configured) {
       return;
     }
     api
@@ -138,7 +142,7 @@ export default function App() {
       .catch(() => {
         setStreamState('offline');
       });
-  }, [addToast]);
+  }, [addToast, configured]);
 
   useEffect(() => {
     if (!caseId) {
@@ -374,6 +378,17 @@ export default function App() {
     window.setTimeout(() => window.location.reload(), 350);
   }, [addToast]);
 
+  const saveBackend = useCallback((origin: string) => {
+    const next = setApiOrigin(origin);
+    setApiOriginState(next);
+    setBackendOpen(false);
+    setTools([]);
+    setCases([]);
+    setGraph(null);
+    addToast(next ? 'Backend dihubungkan. Data dimuat ulang.' : 'Alamat backend dihapus. Data dimuat ulang.');
+    window.setTimeout(() => window.location.reload(), 350);
+  }, [addToast]);
+
   const running = graph?.runs.some((run) => run.status === 'queued' || run.status === 'running') ?? false;
   const runningCount = graph?.runs.filter((run) => run.status === 'queued' || run.status === 'running').length ?? 0;
 
@@ -430,6 +445,15 @@ export default function App() {
         </button>
         <button
           type="button"
+          className={`btn btn-ghost btn-icon ${configured ? '' : 'btn-attention'}`}
+          aria-label="Atur alamat backend"
+          title={configured ? 'Alamat backend' : 'Backend belum terhubung'}
+          onClick={() => setBackendOpen(true)}
+        >
+          <PlugIcon size={18} />
+        </button>
+        <button
+          type="button"
           className="btn btn-ghost btn-icon"
           aria-label="Atur token API"
           title="Token API"
@@ -445,7 +469,12 @@ export default function App() {
       </header>
 
       {docsOpen ? (
-        <Documentation tools={tools} onBack={closeDocs} />
+        <Documentation
+          tools={tools}
+          backendConfigured={configured}
+          onConfigureBackend={() => setBackendOpen(true)}
+          onBack={closeDocs}
+        />
       ) : caseId ? (
         loading && !graph ? (
           <main className="landing">
@@ -511,6 +540,8 @@ export default function App() {
           tools={tools}
           cases={cases}
           casesLoading={casesLoading}
+          backendConfigured={configured}
+          onConfigureBackend={() => setBackendOpen(true)}
           onOpenCase={openCase}
           onCreated={openCase}
           onOpenDocs={openDocs}
@@ -535,6 +566,7 @@ export default function App() {
         </footer>
       ) : null}
 
+      <BackendDialog open={backendOpen} onClose={() => setBackendOpen(false)} onSave={saveBackend} />
       <TokenDialog
         open={tokenOpen}
         current={token}

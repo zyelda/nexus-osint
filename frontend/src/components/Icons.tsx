@@ -205,3 +205,14 @@ export function BookIcon(props: IconProps) {
     </svg>
   );
 }
+
+export function PlugIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <path d="M9 3v5" />
+      <path d="M15 3v5" />
+      <path d="M6 8h12v3a6 6 0 01-6 6 6 6 0 01-6-6z" />
+      <path d="M12 17v4" />
+    </svg>
+  );
+}

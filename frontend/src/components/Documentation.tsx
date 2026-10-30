@@ -1,9 +1,10 @@
-import { backendConfigured } from '../api';
 import type { ToolSpec } from '../types';
-import { CloseIcon, ExternalIcon } from './Icons';
+import { CloseIcon, ExternalIcon, PlugIcon } from './Icons';
 
 interface DocumentationProps {
   tools: ToolSpec[];
+  backendConfigured: boolean;
+  onConfigureBackend: () => void;
   onBack: () => void;
 }
 
@@ -39,7 +40,7 @@ const ENDPOINTS = [
   ['GET', '/cases/<id>/export', 'Ekspor json, csv, pdf, atau graphml.'],
 ];
 
-export function Documentation({ tools, onBack }: DocumentationProps) {
+export function Documentation({ tools, backendConfigured, onConfigureBackend, onBack }: DocumentationProps) {
   const categories = Array.from(new Set(tools.map((tool) => tool.category))).sort();
 
   return (
@@ -61,9 +62,13 @@ export function Documentation({ tools, onBack }: DocumentationProps) {
 
       {!backendConfigured && (
         <div className="notice notice-warn" role="status">
-          <strong>Backend belum terhubung.</strong> Deployment statis ini belum punya alamat API. Isi
-          <code> VITE_API_BASE </code>
-          di environment Vercel, lalu deploy ulang. Bagian <a href="#docs-vercel">Vercel</a> menjelaskan urutannya.
+          <strong>Backend belum terhubung.</strong> Deployment statis ini belum punya alamat API. Masukkan URL backend
+          lewat tombol di bawah, atau isi <code>VITE_API_BASE</code> di environment Vercel lalu deploy ulang. Bagian{' '}
+          <a href="#docs-vercel">Vercel</a> menjelaskan urutannya.
+          <button type="button" className="link-btn" onClick={onConfigureBackend}>
+            <PlugIcon size={13} />
+            Hubungkan backend
+          </button>
         </div>
       )}
 
@@ -417,6 +422,11 @@ docker compose up --build`}</code>
                 dengan URL backend, lalu deploy ulang. Nilai ini dibaca saat build.
               </li>
               <li>
+                <strong>Atau hubungkan dari aplikasi.</strong> Tanpa deploy ulang, klik ikon plug di header atau
+                tombol <em>Hubungkan backend</em> pada banner, lalu masukkan URL backend. Nilai disimpan di browser
+                itu saja, jadi ulangi di browser lain bila perlu.
+              </li>
+              <li>
                 <strong>Deploy frontend.</strong> File <code>vercel.json</code> memakai <code>build.sh</code> dan
                 menyajikan <code>frontend/dist</code>. Tidak perlu Root Directory khusus.
               </li>
@@ -427,8 +437,8 @@ docker compose up --build`}</code>
               </li>
             </ol>
             <p className="docs-note">
-              Tanpa <code>VITE_API_BASE</code>, halaman dan dokumentasi tetap terbuka, tetapi intake akan menampilkan
-              pesan bahwa backend belum terhubung. Bila semua path mengembalikan 500
+              Tanpa alamat backend, halaman dan dokumentasi tetap terbuka, tetapi intake akan menampilkan pesan bahwa
+              backend belum terhubung. Bila semua path mengembalikan 500
               <code> FUNCTION_INVOCATION_FAILED</code>, Vercel masih menjalankan fungsi Python dan pengaturan lama belum
               dibersihkan.
             </p>

@@ -20,3 +20,7 @@ frontend/npm-install.log
 report_*.json
 report_*.csv
 report_*.pdf
+# Local helper binaries such as cloudflared, never committed.
+.tmp-tools/
+.tmp-ngrok.zip
+.tmp-static/

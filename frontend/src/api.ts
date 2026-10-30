@@ -12,12 +12,86 @@ import type {
   ToolRun,
 } from './types';
 
-const API_ORIGIN = (import.meta.env.VITE_API_BASE ?? '').trim().replace(/\/+$/, '');
-const BASE = `${API_ORIGIN}/api/v1`;
+const ENV_ORIGIN = (import.meta.env.VITE_API_BASE ?? '').trim().replace(/\/+$/, '');
+const ORIGIN_KEY = 'berkas.apiBase';
 const TOKEN_KEY = 'berkas.token';
-const STATIC_HOST = /\.(vercel\.app|vercel\.sh)$/i.test(window.location.hostname);
+const STATIC_HOST =
+  import.meta.env.VITE_STATIC_HOST === '1' || /\.(vercel\.app|vercel\.sh|netlify\.app|pages\.dev)$/i.test(window.location.hostname);
 
-export const backendConfigured = Boolean(API_ORIGIN) || !STATIC_HOST;
+export const isStaticHost = STATIC_HOST;
+
+export function normalizeApiOrigin(value: string): string {
+  const raw = value.trim();
+  if (!raw) {
+    return '';
+  }
+  if (/\s/.test(raw)) {
+    throw new Error('Alamat backend tidak boleh mengandung spasi.');
+  }
+  const hasScheme = /^[a-z][a-z0-9+.-]*:\/\//i.test(raw);
+  const hostPart = (hasScheme ? raw.replace(/^[a-z][a-z0-9+.-]*:\/\//i, '') : raw).split(/[/?#]/)[0].replace(/:\d+$/, '');
+  const isLocalHost =
+    hostPart === 'localhost' ||
+    hostPart.endsWith('.localhost') ||
+    /^127\./.test(hostPart) ||
+    /^10\./.test(hostPart) ||
+    /^192\.168\./.test(hostPart) ||
+    /^172\.(1[6-9]|2\d|3[01])\./.test(hostPart);
+  const scheme = hasScheme ? '' : isLocalHost ? 'http://' : 'https://';
+  let url: URL;
+  try {
+    url = new URL(`${scheme}${raw}`);
+  } catch {
+    throw new Error('Alamat backend tidak valid.');
+  }
+  if (url.protocol !== 'https:' && url.protocol !== 'http:') {
+    throw new Error('Alamat backend harus memakai http atau https.');
+  }
+  if (url.pathname !== '/' || url.search || url.hash) {
+    throw new Error('Masukkan origin saja, tanpa path. Contoh: https://api.contoh.com');
+  }
+  const host = url.hostname;
+  const isIp = /^\d{1,3}(\.\d{1,3}){3}$/.test(host) || host.startsWith('[');
+  const isLocal = host === 'localhost' || host.endsWith('.localhost');
+  if (!isIp && !isLocal && !host.includes('.')) {
+    throw new Error('Alamat backend harus memuat nama domain yang lengkap.');
+  }
+  return url.origin;
+}
+
+export function getApiOrigin(): string {
+  try {
+    const stored = normalizeApiOrigin(localStorage.getItem(ORIGIN_KEY) ?? '');
+    if (stored) {
+      return stored;
+    }
+  } catch {
+    // ignore a corrupted stored value and fall back to the build value
+  }
+  return ENV_ORIGIN;
+}
+
+export function setApiOrigin(value: string): string {
+  const origin = normalizeApiOrigin(value);
+  try {
+    if (origin) {
+      localStorage.setItem(ORIGIN_KEY, origin);
+    } else {
+      localStorage.removeItem(ORIGIN_KEY);
+    }
+  } catch {
+    // storage can be unavailable; the current session still uses the value
+  }
+  return origin;
+}
+
+export function isBackendConfigured(): boolean {
+  return Boolean(getApiOrigin()) || !STATIC_HOST;
+}
+
+function apiBase(): string {
+  return `${getApiOrigin()}/api/v1`;
+}
 
 export class ApiError extends Error {
   status: number;
@@ -52,7 +126,7 @@ export function setToken(token: string): void {
 }
 
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
-  if (!backendConfigured) {
+  if (!isBackendConfigured()) {
     throw new ApiError(
       0,
       'backend_not_configured',
@@ -61,6 +135,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   }
   const headers = new Headers(init.headers);
   headers.set('Accept', 'application/json');
+  headers.set('ngrok-skip-browser-warning', 'true');
   if (init.body && !(init.body instanceof FormData)) {
     headers.set('Content-Type', 'application/json');
   }
@@ -70,7 +145,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   }
   let response: Response;
   try {
-    response = await fetch(`${BASE}${path}`, { ...init, headers });
+    response = await fetch(`${apiBase()}${path}`, { ...init, headers });
   } catch {
     throw new ApiError(0, 'network_error', 'Tidak bisa menghubungi server Berkas.');
   }
@@ -164,12 +239,12 @@ export const api = {
   streamUrl: (caseId: string) => {
     const token = getToken();
     const suffix = token ? `?token=${encodeURIComponent(token)}` : '';
-    return `${BASE}/cases/${caseId}/events${suffix}`;
+    return `${apiBase()}/cases/${caseId}/events${suffix}`;
   },
 
   exportUrl: (caseId: string, format: string) => {
     const token = getToken();
     const suffix = token ? `&token=${encodeURIComponent(token)}` : '';
-    return `${BASE}/cases/${caseId}/export?format=${encodeURIComponent(format)}${suffix}`;
+    return `${apiBase()}/cases/${caseId}/export?format=${encodeURIComponent(format)}${suffix}`;
   },
 };
