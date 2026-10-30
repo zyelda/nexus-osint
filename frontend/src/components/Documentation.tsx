@@ -417,13 +417,20 @@ docker compose up --build`}</code>
                 dengan URL backend, lalu deploy ulang. Nilai ini dibaca saat build.
               </li>
               <li>
-                <strong>Deploy frontend.</strong> File <code>vercel.json</code> sudah mengarahkan build ke
-                <code> frontend/dist</code>. Tidak perlu Root Directory khusus.
+                <strong>Deploy frontend.</strong> File <code>vercel.json</code> memakai <code>build.sh</code> dan
+                menyajikan <code>frontend/dist</code>. Tidak perlu Root Directory khusus.
+              </li>
+              <li>
+                <strong>Bersihkan pengaturan lama.</strong> Bila proyek pernah menjalankan versi Python, set Framework
+                Preset ke <code>Other</code> dan kosongkan Build Command, Output Directory, serta Install Command.
+                Pengaturan dashboard menimpa <code>vercel.json</code>.
               </li>
             </ol>
             <p className="docs-note">
               Tanpa <code>VITE_API_BASE</code>, halaman dan dokumentasi tetap terbuka, tetapi intake akan menampilkan
-              pesan bahwa backend belum terhubung.
+              pesan bahwa backend belum terhubung. Bila semua path mengembalikan 500
+              <code> FUNCTION_INVOCATION_FAILED</code>, Vercel masih menjalankan fungsi Python dan pengaturan lama belum
+              dibersihkan.
             </p>
           </section>
 

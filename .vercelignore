@@ -1,0 +1,24 @@
+# Vercel only serves the built frontend. Keep the Python backend out of the
+# upload so it is never detected as a serverless function.
+berkas/
+tests/
+scripts/
+app.py
+requirements.txt
+requirements-dev.txt
+Dockerfile
+docker-compose.yml
+docker-compose.yaml
+.github/
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.db
+uploads/
+backups/
+frontend/node_modules/
+frontend/dist/
+AGENTS.md
+antislop.md
+DESIGN.md

@@ -103,7 +103,9 @@ berkas/
 frontend/             React 18 + TypeScript + Vite + Cytoscape
 scripts/backup.py     arsip zip database dan folder unggahan
 tests/                pytest
-vercel.json           build frontend statis untuk Vercel
+build.sh              entrypoint build frontend untuk Vercel
+vercel.json           build statis dan routing Vercel
+.vercelignore         mengeluarkan backend dari unggahan Vercel
 ```
 
 Penyimpanan default SQLite lewat SQLAlchemy. Worker berjalan sebagai thread di proses yang sama dan mengirim event ke klien melalui SSE.
@@ -370,7 +372,7 @@ Vercel hanya menjalankan frontend. Backend Flask membutuhkan proses yang hidup, 
 
 Artinya deployment Vercel yang berfungsi terdiri dari dua bagian:
 
-1. **Frontend statis di Vercel.** `vercel.json` menjalankan `npm ci` dan `npm run build` di folder `frontend`, lalu menyajikan `frontend/dist`.
+1. **Frontend statis di Vercel.** `vercel.json` memakai `build.sh` sebagai entrypoint build. Skrip itu menjalankan `npm ci` dan `npm run build` di folder `frontend`, lalu Vercel menyajikan `frontend/dist`.
 2. **Backend di host persisten.** Docker, VPS, Render, Fly, atau layanan lain yang mendukung proses panjang dan volume.
 
 Langkah:
@@ -394,6 +396,10 @@ Catatan:
 - Origin di `BERKAS_CORS_ORIGINS` harus sama persis, tanpa garis miring di akhir.
 - SSE lewat reverse proxy perlu buffering dimatikan. Untuk Nginx, set `proxy_buffering off` pada lokasi `/api/`.
 - Jangan menaruh database SQLite di filesystem serverless. Data akan hilang antar request.
+- `vercel.json` memakai `builds` eksplisit supaya Vercel tidak mendeteksi `app.py` sebagai fungsi Python. File `.vercelignore` juga mengeluarkan backend dari unggahan Vercel.
+- Bila proyek Vercel sebelumnya pernah menjalankan versi Python, set Framework Preset ke `Other`, kosongkan Root Directory, dan kosongkan Build Command, Output Directory, serta Install Command di dashboard. Pengaturan dashboard menimpa `vercel.json`.
+
+Gejala konfigurasi yang belum benar: semua path, termasuk `/index.html` dan `/assets/...`, mengembalikan HTTP 500 dengan `FUNCTION_INVOCATION_FAILED`. Itu berarti Vercel masih menjalankan fungsi Python, bukan menyajikan hasil build frontend.
 
 ## Deploy backend
 
@@ -478,7 +484,9 @@ Database versi 1 (`scan_history`, `api_keys`, `scan_logs`) tidak dipakai lagi. F
 ├── .github/workflows/ci.yml
 ├── Dockerfile
 ├── docker-compose.yml
+├── build.sh
 ├── vercel.json
+├── .vercelignore
 ├── .env.example
 └── README.md
 ```
