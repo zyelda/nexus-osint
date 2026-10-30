@@ -427,6 +427,11 @@ docker compose up --build`}</code>
                 itu saja, jadi ulangi di browser lain bila perlu.
               </li>
               <li>
+                <strong>Isi token API.</strong> Bila backend memakai <code>BERKAS_API_TOKEN</code>, dialog token muncul
+                otomatis setelah backend terhubung. Tempel token yang sama dengan yang ada di server. Token juga bisa
+                dibuka kapan saja lewat ikon kunci di header.
+              </li>
+              <li>
                 <strong>Deploy frontend.</strong> File <code>vercel.json</code> memakai <code>build.sh</code> dan
                 menyajikan <code>frontend/dist</code>. Tidak perlu Root Directory khusus.
               </li>
