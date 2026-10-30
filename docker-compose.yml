@@ -1,0 +1,25 @@
+services:
+  berkas:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      FLASK_ENV: production
+      FLASK_SECRET_KEY: "${FLASK_SECRET_KEY:?Set FLASK_SECRET_KEY in .env or the shell}"
+      BERKAS_API_TOKEN: ${BERKAS_API_TOKEN:-}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      AI_PROVIDER: ${AI_PROVIDER:-auto}
+      AI_MODEL: ${AI_MODEL:-}
+      PUBLIC_REDACTION: ${PUBLIC_REDACTION:-true}
+      MAX_RUNS_PER_BATCH: ${MAX_RUNS_PER_BATCH:-12}
+      TOOL_CACHE_TTL: ${TOOL_CACHE_TTL:-3600}
+      SUMMARY_CACHE_TTL: ${SUMMARY_CACHE_TTL:-86400}
+      DATABASE_URL: sqlite:////data/berkas.db
+      UPLOAD_FOLDER: /data/uploads
+    volumes:
+      - berkas-data:/data
+    restart: unless-stopped
+
+volumes:
+  berkas-data:
