@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ApiError, api, getToken, setToken } from './api';
+import { ApiError, api, backendConfigured, getToken, setToken } from './api';
 import { CaseRail } from './components/CaseRail';
 import { Documentation } from './components/Documentation';
 import { FindingsPanel } from './components/FindingsPanel';
@@ -88,6 +88,11 @@ export default function App() {
   );
 
   const refreshCases = useCallback(async () => {
+    if (!backendConfigured) {
+      setCases([]);
+      setCasesLoading(false);
+      return;
+    }
     setCasesLoading(true);
     try {
       setCases(await api.listCases());
@@ -110,6 +115,9 @@ export default function App() {
   }, [theme]);
 
   useEffect(() => {
+    if (!backendConfigured) {
+      return;
+    }
     api
       .tools()
       .then(setTools)

@@ -401,10 +401,14 @@ export function Landing({
 
         <section className="side-section side-note">
           <span className="file-tab">Cakupan tool</span>
-          <p>
-            {tools.length} tool terdaftar. {tools.filter((tool) => tool.requires_key).length} tool membutuhkan API key
-            dan akan ditandai jika belum dikonfigurasi.
-          </p>
+          {tools.length > 0 ? (
+            <p>
+              {tools.length} tool terdaftar. {tools.filter((tool) => tool.requires_key).length} tool membutuhkan API key
+              dan akan ditandai jika belum dikonfigurasi.
+            </p>
+          ) : (
+            <p>Daftar tool dibaca dari backend. Setelah backend terhubung, jumlah dan status key muncul di sini.</p>
+          )}
           <p>
             Semua hasil masuk ke graph yang sama, lengkap dengan sumber, bobot bukti, dan tingkat keyakinan.
           </p>
